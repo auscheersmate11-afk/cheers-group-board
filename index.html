@@ -1,0 +1,564 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex, nofollow"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23031147'/%3E%3Crect x='7' y='17' width='4' height='8' rx='1' fill='%232f86d6'/%3E%3Crect x='14' y='12' width='4' height='13' rx='1' fill='%232f86d6'/%3E%3Crect x='21' y='7' width='4' height='18' rx='1' fill='%23fdc805'/%3E%3C/svg%3E"><style>:root{color-scheme:light;box-sizing:border-box}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>グループ進捗ボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Noto+Sans+JP:wght@900&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: one centered column（旅キャリ DMダッシュボードと同じトンマナ）。KV＝全体の達成率と、5段階の信号に並んだグループ → グループ別カード（数字・ルール/目標・やること）→ 今日やること → くわしく。
+   信号の色（介入＝赤・もう一歩＝橙・いいペース＝空色・走り切れる＝緑・最高＝金）はアクセントとは別の意味の色。 */
+:root {
+  --bg: #f3f6fb; --surface: #ffffff; --ink: #101a38; --muted: #5b6886; --line: #dde4f0;
+  --navy: #031147; --head: #0b1d5c; --sky: #2f86d6; --sky-soft: #e6f0fb;
+  --yellow: #fdc805; --gold-ink: #946f00; --yellow-soft: #fff4c4;
+  --s-alert: #d23f2b; --s-alert-soft: #fde6e1; --s-watch: #e07b12; --s-watch-soft: #fdeedb;
+  --s-good: #2f86d6; --s-good-soft: #e6f0fb; --s-run: #2f8a4f; --s-run-soft: #e2f3e7; --s-best: #c79300; --s-best-soft: #fff4c4; --s-none: #a3adc4; --s-none-soft: #eef1f7;
+  --btn-bg: #031147; --btn-ink: #ffffff;
+  --hero-bg1: #031147; --hero-bg2: #173c8e; --hero-ink: #ffffff; --hero-muted: #b9c6e6; --hero-line: rgba(255,255,255,.22); --hero-chip: rgba(255,255,255,.09); --hero-yellow: #fdc805;
+  --font-jp: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  --font-num: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --font-brand: "Noto Sans JP", "Hiragino Sans", "Zen Kaku Gothic New", sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1122; --surface: #121a31; --ink: #e8edf8; --muted: #9aa8c6; --line: #26324f;
+    --navy: #b8c8f2; --head: #c9d6f7; --sky: #6fb0f0; --sky-soft: #16294a;
+    --yellow: #fdc805; --gold-ink: #f5cf3c; --yellow-soft: #3a3010;
+    --s-alert: #ff8b74; --s-alert-soft: #3d1b16; --s-watch: #f6a54e; --s-watch-soft: #3a2810;
+    --s-good: #6fb0f0; --s-good-soft: #16294a; --s-run: #7fd197; --s-run-soft: #173123; --s-best: #f5cf3c; --s-best-soft: #3a3010; --s-none: #5c6784; --s-none-soft: #1a2340;
+    --btn-bg: #fdc805; --btn-ink: #031147;
+    --hero-bg1: #08143a; --hero-bg2: #183a80; --hero-ink: #eef3fb; --hero-muted: #a9bde3; --hero-line: rgba(255,255,255,.16); --hero-chip: rgba(255,255,255,.06);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1122; --surface: #121a31; --ink: #e8edf8; --muted: #9aa8c6; --line: #26324f;
+  --navy: #b8c8f2; --head: #c9d6f7; --sky: #6fb0f0; --sky-soft: #16294a;
+  --yellow: #fdc805; --gold-ink: #f5cf3c; --yellow-soft: #3a3010;
+  --s-alert: #ff8b74; --s-alert-soft: #3d1b16; --s-watch: #f6a54e; --s-watch-soft: #3a2810;
+  --s-good: #6fb0f0; --s-good-soft: #16294a; --s-run: #7fd197; --s-run-soft: #173123; --s-best: #f5cf3c; --s-best-soft: #3a3010; --s-none: #5c6784; --s-none-soft: #1a2340;
+  --btn-bg: #fdc805; --btn-ink: #031147;
+  --hero-bg1: #08143a; --hero-bg2: #183a80; --hero-ink: #eef3fb; --hero-muted: #a9bde3; --hero-line: rgba(255,255,255,.16); --hero-chip: rgba(255,255,255,.06);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-jp); font-size: 15px; line-height: 1.65; }
+.wrap > * { min-width: 0; }
+/* 1列のグリッドは、中身の長さで横に広がらないように列幅を固定する */
+.wrap, .kv, .sec, .gc, .gc-body, .wc, .acts, .items, .spark, .up-card, .kv-copy, .gc-name, .ac-main, .todo-in, .todo-in ul { grid-template-columns: minmax(0, 1fr); }
+.kv > *, .gc-body > *, .wc > * { min-width: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 64px; display: grid; gap: 24px; }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+
+/* 信号の色を、要素ごとに --c / --cs で受け取る */
+.s-alert { --c: var(--s-alert); --cs: var(--s-alert-soft); }
+.s-watch { --c: var(--s-watch); --cs: var(--s-watch-soft); }
+.s-good  { --c: var(--s-good);  --cs: var(--s-good-soft); }
+.s-run   { --c: var(--s-run);   --cs: var(--s-run-soft); }
+.s-best  { --c: var(--s-best);  --cs: var(--s-best-soft); }
+.s-none  { --c: var(--s-none);  --cs: var(--s-none-soft); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px 3px 8px; border-radius: 999px; font-size: 12.5px; font-weight: 900; background: var(--cs); color: var(--c); white-space: nowrap; line-height: 1.5; }
+.pill svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.pill.solid { background: var(--c); color: #fff; }
+.s-best .pill.solid, .pill.solid.s-best { color: #031147; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.logo { flex: none; display: grid; place-items: center; width: 58px; height: 58px; border-radius: 16px; background: var(--yellow); color: #031147; font: 900 13px/1.05 var(--font-brand); text-align: center; }
+.logo span { display: inline-block; transform: skewX(-12deg); }
+.eyebrow { font: 700 11.5px var(--font-num); letter-spacing: .22em; color: var(--muted); }
+h1 { font-size: clamp(22px, 3.6vw, 30px); font-weight: 900; color: var(--head); line-height: 1.25; }
+.status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 700; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--s-run); }
+.leader-note { margin: -12px 0 0; font-size: 13px; padding: 9px 13px; border-radius: 10px; background: var(--yellow-soft); border: 1px solid var(--line); }
+
+/* KV */
+.kv { position: relative; overflow: hidden; border-radius: 20px; padding: 24px 24px 22px; color: var(--hero-ink);
+  background: radial-gradient(110% 80% at 92% 0%, rgba(253, 200, 5, .16), transparent 55%), linear-gradient(150deg, var(--hero-bg1), var(--hero-bg2)); display: grid; gap: 22px; }
+.kv-head { position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px 24px; }
+.kv-copy { display: grid; gap: 8px; min-width: 0; }
+.kv-eyebrow { font: 700 12px var(--font-num); letter-spacing: .24em; color: var(--hero-yellow); }
+.kv-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-family: var(--font-brand); font-weight: 900; }
+.kv-big .lb { font-size: clamp(16px, 2.4vw, 20px); }
+.kv-big .n { font-family: var(--font-num); font-weight: 700; font-size: clamp(54px, 9vw, 80px); line-height: .95; font-variant-numeric: tabular-nums; }
+.kv-big .n small { font-size: .42em; margin-left: 2px; }
+.kv-big .pill { align-self: center; font-size: 15px; padding: 5px 14px 5px 10px; }
+.kv-sub { color: var(--hero-muted); font-size: 14px; }
+.kv-sub b { color: var(--hero-ink); font-family: var(--font-num); font-size: 16px; }
+.filters { display: grid; gap: 8px; justify-items: end; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 12px; background: color-mix(in srgb, var(--hero-bg1) 72%, transparent); border: 1px solid var(--hero-line); }
+.seg button { border: 0; background: transparent; color: var(--hero-muted); padding: 5px 12px; border-radius: 9px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--hero-yellow); color: #031147; }
+.seg-l { font-size: 11px; font-weight: 700; color: var(--hero-muted); letter-spacing: .08em; }
+@media (max-width: 760px) { .filters { justify-items: start; } .kv { padding: 20px 16px 18px; } }
+
+/* 5段階の信号（左ほど要注意） */
+.track { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.stop { position: relative; display: grid; align-content: start; gap: 6px; padding: 12px 12px 12px; border-radius: 14px; background: var(--hero-chip); border: 1px solid var(--hero-line); min-width: 0; }
+.stop .hd { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 900; line-height: 1.3; }
+.stop .dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent); }
+.stop .rg { font: 600 11.5px var(--font-num); color: var(--hero-muted); }
+.stop .cnt { font: 700 34px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.stop .cnt span { font: 700 12px var(--font-jp); color: var(--hero-muted); margin-left: 3px; }
+.stop.zero .cnt { color: var(--hero-muted); opacity: .6; }
+.stop.alert-on { background: color-mix(in srgb, var(--s-alert) 26%, transparent); border-color: color-mix(in srgb, #ff8b74 70%, transparent); }
+.stop.alert-on .dot { animation: beat 1.6s ease-in-out infinite; }
+@keyframes beat { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--c) 10%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .stop.alert-on .dot { animation: none; } }
+.gchips { display: flex; flex-wrap: wrap; gap: 4px; }
+.gchips a { display: inline-block; padding: 1px 8px; border-radius: 999px; background: rgba(255,255,255,.12); color: var(--hero-ink); font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.gchips a:hover { background: var(--hero-yellow); color: #031147; }
+.gchips .sm { display: none; }
+@media (max-width: 760px) {
+  .track { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .stop { padding: 8px 6px; gap: 4px; }
+  .stop .hd { font-size: 11px; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .stop .rg { font-size: 10.5px; }
+  .stop .cnt { font-size: 26px; }
+  .gchips a { font-size: 10.5px; padding: 0 5px; }
+  .gchips .lg { display: none; } .gchips .sm { display: inline; }
+  .stop .cnt span { display: none; }
+}
+
+.totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--hero-line); padding-top: 16px; }
+.tot { display: grid; gap: 2px; padding: 0 16px; border-left: 1px solid var(--hero-line); min-width: 0; }
+.tot:first-child { border-left: 0; padding-left: 0; }
+.tot .k { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--hero-muted); }
+.tot .k svg { width: 15px; height: 15px; fill: none; stroke: var(--hero-yellow); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tot .v { font: 700 36px/1.1 var(--font-num); font-variant-numeric: tabular-nums; }
+.tot .v span { font: 700 13px var(--font-jp); color: var(--hero-muted); margin-left: 3px; }
+.tot .s { font-size: 12px; color: var(--hero-muted); }
+.tot.deal .v { color: var(--hero-yellow); }
+@media (max-width: 760px) { .totals { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; } .tot:nth-child(3) { border-left: 0; padding-left: 0; } .tot .v { font-size: 30px; } }
+
+/* section heads */
+.sec { display: grid; gap: 14px; min-width: 0; }
+.sec-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sec-h .ic { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--navy); color: var(--bg); flex: none; }
+.sec-h .ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sec-h h2 { font-size: 20px; font-weight: 900; color: var(--head); }
+.badge { display: inline-grid; place-items: center; min-width: 26px; height: 24px; padding: 0 8px; border-radius: 999px; background: var(--yellow); color: #031147; font: 700 14px var(--font-num); }
+.badge.red { background: var(--s-alert); color: #fff; }
+.sec-h .scope { margin-left: auto; font-size: 12.5px; color: var(--muted); font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); font-weight: 700; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; }
+
+/* グループカード */
+.groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .groups { grid-template-columns: minmax(0, 1fr); } }
+.gc { position: relative; display: grid; gap: 14px; padding: 0; overflow: hidden; scroll-margin-top: 12px; }
+.gc::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--c); }
+.gc.s-alert { border-color: color-mix(in srgb, var(--s-alert) 55%, var(--line)); }
+.gc-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: start; padding: 16px 18px 0 24px; }
+.gc.s-alert .gc-top { background: linear-gradient(180deg, var(--cs), transparent); padding-bottom: 12px; margin-bottom: -12px; }
+.gc-name { display: grid; gap: 4px; min-width: 0; }
+.gc-name h3 { font-size: 18px; font-weight: 900; color: var(--head); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.gc-name h3 .ch { font: 600 12.5px var(--font-jp); color: var(--muted); }
+.gc-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 12.5px; color: var(--muted); font-weight: 700; }
+.lead { display: inline-flex; align-items: center; gap: 5px; padding: 1px 9px; border-radius: 999px; background: var(--sky-soft); color: var(--head); }
+.lead svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.left-d { color: var(--s-watch); }
+.gc-ach { display: grid; justify-items: end; gap: 4px; }
+.gc-ach .v { font: 700 44px/1 var(--font-num); color: var(--c); font-variant-numeric: tabular-nums; }
+.gc-ach .v small { font-size: 18px; margin-left: 1px; }
+.gc-ach .v.na { font-size: 22px; color: var(--muted); }
+.gc-body { display: grid; gap: 14px; padding: 0 18px 18px 24px; }
+.meter { position: relative; height: 12px; border-radius: 999px; background: var(--bg); margin-top: 6px; }
+.meter .fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--c); }
+.meter .tk { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--surface); }
+.meter-l { position: relative; height: 14px; font: 600 10.5px var(--font-num); color: var(--muted); }
+.meter-l span { position: absolute; transform: translateX(-50%); }
+.m4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.m4 div { border-radius: 10px; background: var(--bg); padding: 8px 10px; min-width: 0; }
+.m4 .k { font-size: 11.5px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+.m4 .v { font: 700 24px/1.15 var(--font-num); color: var(--head); font-variant-numeric: tabular-nums; }
+.m4 .v span { font: 700 11.5px var(--font-jp); color: var(--muted); margin-left: 2px; }
+.m4 .s { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.m4 .deal .v { color: var(--gold-ink); }
+@media (max-width: 520px) { .m4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.spark { display: grid; gap: 4px; }
+.spark-h { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); font-weight: 700; }
+.spark svg { display: block; width: 100%; height: 48px; overflow: visible; }
+.items { display: grid; gap: 8px; }
+.it { display: grid; grid-template-columns: minmax(0, 1fr) 120px 46px; gap: 4px 10px; align-items: center; font-size: 13.5px; }
+.it .lbl { min-width: 0; display: flex; gap: 6px; align-items: baseline; }
+.it .tag { flex: none; font-size: 10.5px; font-weight: 900; padding: 0 6px; border-radius: 5px; border: 1px solid var(--line); color: var(--muted); }
+.it .tag.goal { border-color: var(--yellow); background: var(--yellow-soft); color: var(--gold-ink); }
+.it .txt { font-weight: 700; color: var(--ink); }
+.it .bar { height: 8px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+.it .bar span { display: block; height: 100%; border-radius: 999px; background: var(--c); }
+.it .pct { font: 700 15px var(--font-num); text-align: right; color: var(--c); font-variant-numeric: tabular-nums; }
+.it .pct.na { color: var(--muted); font-size: 12px; font-family: var(--font-jp); }
+.it .sub { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); margin-top: -2px; padding-left: 40px; }
+@media (max-width: 520px) { .it { grid-template-columns: minmax(0, 1fr) 70px 42px; } .it .sub { padding-left: 0; } }
+.ppl { display: flex; flex-wrap: wrap; gap: 6px; }
+.pp { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--bg); font-size: 12.5px; font-weight: 700; }
+.pp b { font: 700 13.5px var(--font-num); color: var(--head); }
+.pp small { font-size: 10.5px; color: var(--muted); }
+.pp.stop0 { background: var(--s-alert-soft); color: var(--s-alert); }
+.pp.stop0 b { color: var(--s-alert); }
+.pp .ld { font-size: 10px; font-weight: 900; color: var(--sky); }
+.todo-in { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; background: var(--cs); }
+.todo-in h4 { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 900; color: var(--c); }
+.todo-in h4 svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.todo-in ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.todo-in li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; font-size: 13.5px; align-items: baseline; }
+.todo-in li .w { font-size: 11px; font-weight: 900; padding: 0 7px; border-radius: 999px; background: var(--surface); color: var(--head); white-space: nowrap; }
+.todo-in li p { font-weight: 700; }
+.todo-in li small { display: block; font-size: 12px; color: var(--muted); font-weight: 500; }
+.gc-note { font-size: 12.5px; color: var(--muted); }
+details.more summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--sky); list-style: none; }
+details.more summary::-webkit-details-marker { display: none; }
+details.more[open] summary { margin-bottom: 8px; }
+.up-card { display: grid; gap: 8px; padding: 18px 18px 18px 24px; }
+
+/* 今日やること（だれが・何を） */
+.who-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .who-grid { grid-template-columns: minmax(0, 1fr); } }
+.wc { display: grid; gap: 12px; }
+.wc-h { display: flex; align-items: center; gap: 10px; }
+.av { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--navy); color: var(--bg); font: 900 15px var(--font-brand); }
+.wc.mgr .av { background: var(--yellow); color: #031147; }
+.wc-h h3 { font-size: 16.5px; font-weight: 900; color: var(--head); line-height: 1.3; }
+.wc-h small { display: block; font-size: 12px; color: var(--muted); font-weight: 700; }
+.wc-h .cnts { margin-left: auto; display: flex; gap: 4px; }
+.wc-h .cnts span { font: 700 12px var(--font-num); padding: 1px 8px; border-radius: 999px; background: var(--cs); color: var(--c); }
+.acts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ac { display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; padding: 10px 12px 10px 0; border-radius: 12px; background: var(--bg); overflow: hidden; }
+.ac::before { content: ""; grid-row: 1 / span 2; align-self: stretch; background: var(--c); border-radius: 0 4px 4px 0; }
+.ac.done { opacity: .5; }
+.ac.done .ac-t { text-decoration: line-through; }
+.ac-main { display: grid; gap: 3px; min-width: 0; }
+.ac-hd { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+.ac-hd .pill { padding: 0 8px 0 6px; font-size: 11px; }
+.ac-hd .pill svg { width: 12px; height: 12px; }
+.ac-hd a { color: var(--sky); text-decoration: none; font-weight: 900; }
+.ac-t { font-size: 14.5px; font-weight: 900; color: var(--head); overflow-wrap: anywhere; line-height: 1.5; }
+.ac ul { margin: 0; padding-left: 1.1em; display: grid; gap: 1px; font-size: 12.5px; color: var(--muted); }
+.ac ul li b { color: var(--ink); }
+.ck { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; font-weight: 700; color: var(--muted); padding: 3px 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); white-space: nowrap; }
+.ck input { width: 15px; height: 15px; accent-color: var(--sky); margin: 0; }
+.kv-jump { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 10px; background: var(--hero-yellow); color: #031147; font-weight: 900; font-size: 13.5px; text-decoration: none; }
+.kv-jump b { font: 700 16px var(--font-num); }
+.empty { padding: 18px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* くわしく */
+.tbl-wrap { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; vertical-align: middle; }
+th:first-child, td:first-child, th.l, td.l { text-align: left; }
+thead th { font-size: 12px; color: var(--muted); font-weight: 700; background: var(--bg); }
+td .c { font: 700 15px var(--font-num); font-variant-numeric: tabular-nums; }
+td .p { display: block; font: 600 11px var(--font-num); color: var(--muted); }
+td.ach { font: 700 15px var(--font-num); color: var(--c); }
+tr.sum td { background: var(--yellow-soft); font-weight: 700; }
+.defs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; margin-top: 10px; }
+@media (max-width: 760px) { .defs { grid-template-columns: minmax(0, 1fr); } }
+.defs div { font-size: 13px; color: var(--muted); }
+.defs b { display: block; color: var(--head); font-size: 13.5px; }
+.sig-scale { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.sig-scale div { border-radius: 10px; padding: 8px 10px; background: var(--cs); color: var(--c); font-weight: 900; font-size: 13px; display: grid; gap: 2px; }
+.sig-scale small { font: 700 12px var(--font-num); color: var(--ink); opacity: .75; }
+@media (max-width: 620px) { .sig-scale { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.foot { font-size: 12px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><span>GROUP<br>BOARD</span></div>
+      <div>
+        <div class="eyebrow">CHEERS MATE · GROUP BOARD</div>
+        <h1>グループ進捗ボード</h1>
+      </div>
+    </div>
+    <div class="status">
+      <span class="chip"><i></i><span id="stamp">—</span></span>
+      <span class="chip">運営用</span>
+    </div>
+  </header>
+  <p class="leader-note" id="leaderNote" hidden></p>
+
+  <section class="kv" aria-labelledby="kvTitle">
+    <div class="kv-head">
+      <div class="kv-copy">
+        <div class="kv-eyebrow" id="kvScope">ALL · 全グループ</div>
+        <h2 class="kv-big" id="kvTitle"><span class="lb" id="kvLb">全グループの達成率</span><span class="n" id="kvAch">—</span><span id="kvPill"></span></h2>
+        <p class="kv-sub" id="kvSub"></p>
+        <a class="kv-jump" href="#todo" id="kvJump">今日やること <b id="kvJumpN">0</b> 件を見る ↓</a>
+      </div>
+      <div class="filters">
+        <span class="seg-l">見る期間</span>
+        <div class="seg" role="group" aria-label="見る期間" id="segPeriod">
+          <button type="button" data-v="w7">直近7日</button><button type="button" data-v="month">今月</button><button type="button" data-v="all">開始から</button>
+        </div>
+        <span class="seg-l">だれのグループ</span>
+        <div class="seg" role="group" aria-label="リーダー" id="segLeader"></div>
+      </div>
+    </div>
+    <ol class="track" id="track" aria-label="信号ごとのグループ数"></ol>
+    <div class="totals" id="totals"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="gH">
+    <div class="sec-h">
+      <span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M15.5 14.3c3 .3 5.5 2.6 5.5 5.7"/></svg></span>
+      <h2 id="gH">グループ別の進み具合</h2>
+      <span class="scope" id="gScope"></span>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="aH" id="todo">
+    <div class="sec-h">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></span>
+      <h2 id="aH">今日やること</h2><span class="badge red" id="aCount">0</span>
+      <span class="scope">直近7日の数字で判定・だれがやるか別</span>
+    </div>
+    <div class="who-grid" id="acts"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="mH">
+    <div class="sec-h">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+      <h2 id="mH">くわしく</h2>
+    </div>
+    <div class="card">
+      <h3 style="font-size:16.5px;font-weight:900;color:var(--head)">グループ別の数字</h3>
+      <div class="tbl-wrap"><table id="tbl"></table></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:16.5px;font-weight:900;color:var(--head)">信号の見方と数え方</h3>
+      <div class="sig-scale" id="sigScale"></div>
+      <div class="defs" id="defs"></div>
+    </div>
+  </section>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+const D = {"asof": "2026-10-24", "y": "2026-10-23", "built": "2026-10-24 17:21", "ranges": {"w7": "10/17〜10/23", "month": "10/1〜10/23"}, "manager": "KODAIさん", "leaders": [{"key": "奥野渚", "name": "渚さん"}, {"key": "平島雄太", "name": "平島さん"}, {"key": "佐藤源太", "name": "源太さん"}], "groups": [{"key": "同期_b", "channel": "同期グループ_b", "kind": "同期", "leader": "奥野渚", "leader_name": "渚さん", "start": "2026-08-22", "end": "2026-10-31", "next": "11月からシャッフルクラスへ移行", "note": "", "upcoming": false, "days_in": 64, "days_left": 7, "members": [{"name": "吉川真須美", "is_leader": false, "dm7": 33, "dm_month": 95, "dm_all": 127, "reply_all": 11, "sample_all": 1, "order_all": 0, "pending": 0, "last_dm": "2026-10-21", "idle": 2, "post7": 8, "challenge": {"state": "完走", "date": "9/14", "day": 21}}, {"name": "中田早紀", "is_leader": false, "dm7": 17, "dm_month": 42, "dm_all": 128, "reply_all": 4, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-22", "idle": 1, "post7": 5, "challenge": {"state": "完走", "date": "9/14", "day": 21}}, {"name": "音羽顕慈", "is_leader": false, "dm7": 50, "dm_month": 160, "dm_all": 252, "reply_all": 15, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-21", "idle": 2, "post7": 8, "challenge": {"state": "完走", "date": "9/14", "day": 21}}, {"name": "杉本ちえこ", "is_leader": false, "dm7": 0, "dm_month": 0, "dm_all": 16, "reply_all": 0, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-09-30", "idle": 23, "post7": 0, "challenge": {"state": "完走", "date": "9/14", "day": 21}}, {"name": "河守幸絵", "is_leader": false, "dm7": 41, "dm_month": 176, "dm_all": 271, "reply_all": 25, "sample_all": 0, "order_all": 0, "pending": 1, "last_dm": "2026-10-23", "idle": 0, "post7": 7, "challenge": {"state": "完走", "date": "9/12", "day": 21}}], "left": [], "goals": [{"label": "10/31までに新規アプローチ合計100件", "type": "total_dm", "rate": 84, "raw": 179, "act": 794, "exp": 443.7, "goal_total": 500, "frac": 89, "target": "1人100件（10/31まで）", "now": "新規アプローチ 合計794件（5人）", "per": {"吉川真須美": 127, "中田早紀": 128, "音羽顕慈": 252, "杉本ちえこ": 16, "河守幸絵": 271}, "need_day": 0.0, "wait": null, "rem": 0, "rem_days": 8}], "per": {"w7": {"range": "10/17〜10/23", "m": {"dm": 141, "dm_people": 4, "people": 5, "reply": 7, "listdm": 120, "sample": 0, "order": 0, "pending": 1}, "rules": [{"label": "1日2件、新規アプローチ（9/17〜）", "type": "daily_dm_min", "rate": 54, "per": {"吉川真須美": 57, "中田早紀": 43, "音羽顕慈": 71, "杉本ちえこ": 0, "河守幸絵": 100}, "how": "1日2件以上送れた日の割合"}, {"label": "作業開始時にGOと投稿", "type": "post_on_dm_days", "rate": 0, "per": {"吉川真須美": 0, "中田早紀": 0, "音羽顕慈": 0, "杉本ちえこ": null, "河守幸絵": 0}, "how": "DMを送った日に、グループへ投稿した日の割合（「GO」などの言葉を含む投稿）"}, {"label": "できなかったときも報告する", "type": "post_on_off_days", "rate": 33, "per": {"吉川真須美": 33, "中田早紀": 0, "音羽顕慈": 100, "杉本ちえこ": 0, "河守幸絵": null}, "how": "DMがない日に、グループへ投稿した日の割合"}], "ach": 43, "sig": "alert"}, "month": {"range": "10/1〜10/23", "m": {"dm": 473, "dm_people": 4, "people": 5, "reply": 34, "listdm": 417, "sample": 0, "order": 0, "pending": 1}, "rules": [{"label": "1日2件、新規アプローチ（9/17〜）", "type": "daily_dm_min", "rate": 57, "per": {"吉川真須美": 70, "中田早紀": 35, "音羽顕慈": 78, "杉本ちえこ": 0, "河守幸絵": 100}, "how": "1日2件以上送れた日の割合"}, {"label": "作業開始時にGOと投稿", "type": "post_on_dm_days", "rate": 18, "per": {"吉川真須美": 0, "中田早紀": 38, "音羽顕慈": 32, "杉本ちえこ": null, "河守幸絵": 4}, "how": "DMを送った日に、グループへ投稿した日の割合（「GO」などの言葉を含む投稿）"}, {"label": "できなかったときも報告する", "type": "post_on_off_days", "rate": 32, "per": {"吉川真須美": 29, "中田早紀": 13, "音羽顕慈": 75, "杉本ちえこ": 9, "河守幸絵": null}, "how": "DMがない日に、グループへ投稿した日の割合"}], "ach": 48, "sig": "alert"}, "all": {"range": "8/22〜10/23", "m": {"dm": 794, "dm_people": 5, "people": 5, "reply": 55, "listdm": 714, "sample": 1, "order": 0, "pending": 1}, "rules": [{"label": "1日2件、新規アプローチ（9/17〜）", "type": "daily_dm_min", "rate": 52, "per": {"吉川真須美": 43, "中田早紀": 41, "音羽顕慈": 78, "杉本ちえこ": 0, "河守幸絵": 97}, "how": "1日2件以上送れた日の割合"}, {"label": "作業開始時にGOと投稿", "type": "post_on_dm_days", "rate": 30, "per": {"吉川真須美": 0, "中田早紀": 53, "音羽顕慈": 48, "杉本ちえこ": 33, "河守幸絵": 17}, "how": "DMを送った日に、グループへ投稿した日の割合（「GO」などの言葉を含む投稿）"}, {"label": "できなかったときも報告する", "type": "post_on_off_days", "rate": 40, "per": {"吉川真須美": 28, "中田早紀": 19, "音羽顕慈": 56, "杉本ちえこ": 20, "河守幸絵": 75}, "how": "DMがない日に、グループへ投稿した日の割合"}], "ach": 52, "sig": "alert"}}, "daily": [{"d": "2026-10-10", "v": 33}, {"d": "2026-10-11", "v": 39}, {"d": "2026-10-12", "v": 30}, {"d": "2026-10-13", "v": 33}, {"d": "2026-10-14", "v": 24}, {"d": "2026-10-15", "v": 21}, {"d": "2026-10-16", "v": 11}, {"d": "2026-10-17", "v": 26}, {"d": "2026-10-18", "v": 18}, {"d": "2026-10-19", "v": 38}, {"d": "2026-10-20", "v": 16}, {"d": "2026-10-21", "v": 26}, {"d": "2026-10-22", "v": 11}, {"d": "2026-10-23", "v": 6}], "leader_posts7": 4, "sub_posts7": {"音羽顕慈": 8, "中田早紀": 5}, "peer7": 6, "unmeasured": []}, {"key": "同期_c", "channel": "同期グループ_c", "kind": "同期", "leader": "奥野渚", "leader_name": "渚さん", "start": "2026-09-01", "end": null, "next": "", "note": "", "upcoming": false, "days_in": 54, "days_left": null, "members": [{"name": "森山良子", "is_leader": false, "dm7": 0, "dm_month": 0, "dm_all": 48, "reply_all": 1, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-09-30", "idle": 23, "post7": 0, "challenge": {"state": "完走", "date": "9/22", "day": 21}}, {"name": "大湾梨香子", "is_leader": false, "dm7": 58, "dm_month": 217, "dm_all": 417, "reply_all": 44, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 10, "challenge": {"state": "完走", "date": "9/22", "day": 21}}, {"name": "臼田亜子", "is_leader": false, "dm7": 41, "dm_month": 57, "dm_all": 159, "reply_all": 13, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 8, "challenge": {"state": "完走", "date": "9/22", "day": 21}}], "left": [], "goals": [], "per": {"w7": {"range": "10/17〜10/23", "m": {"dm": 99, "dm_people": 2, "people": 3, "reply": 7, "listdm": 99, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "1日1件は新規アプローチ", "type": "daily_dm_min", "rate": 67, "per": {"森山良子": 0, "大湾梨香子": 100, "臼田亜子": 100}, "how": "1日1件以上送れた日の割合"}, {"label": "1日1回はみなさんに声がけ", "type": "cheer_days", "rate": 19, "per": {"森山良子": 0, "大湾梨香子": 43, "臼田亜子": 14}, "how": "ほかのメンバーに返信・メンションした日の割合"}], "ach": 43, "sig": "alert"}, "month": {"range": "10/1〜10/23", "m": {"dm": 274, "dm_people": 2, "people": 3, "reply": 22, "listdm": 271, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "1日1件は新規アプローチ", "type": "daily_dm_min", "rate": 49, "per": {"森山良子": 0, "大湾梨香子": 100, "臼田亜子": 48}, "how": "1日1件以上送れた日の割合"}, {"label": "1日1回はみなさんに声がけ", "type": "cheer_days", "rate": 17, "per": {"森山良子": 4, "大湾梨香子": 30, "臼田亜子": 17}, "how": "ほかのメンバーに返信・メンションした日の割合"}], "ach": 33, "sig": "alert"}, "all": {"range": "9/1〜10/23", "m": {"dm": 624, "dm_people": 3, "people": 3, "reply": 58, "listdm": 618, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "1日1件は新規アプローチ", "type": "daily_dm_min", "rate": 77, "per": {"森山良子": 55, "大湾梨香子": 100, "臼田亜子": 77}, "how": "1日1件以上送れた日の割合"}, {"label": "1日1回はみなさんに声がけ", "type": "cheer_days", "rate": 20, "per": {"森山良子": 8, "大湾梨香子": 36, "臼田亜子": 17}, "how": "ほかのメンバーに返信・メンションした日の割合"}], "ach": 48, "sig": "alert"}}, "daily": [{"d": "2026-10-10", "v": 2}, {"d": "2026-10-11", "v": 10}, {"d": "2026-10-12", "v": 20}, {"d": "2026-10-13", "v": 12}, {"d": "2026-10-14", "v": 14}, {"d": "2026-10-15", "v": 29}, {"d": "2026-10-16", "v": 17}, {"d": "2026-10-17", "v": 16}, {"d": "2026-10-18", "v": 13}, {"d": "2026-10-19", "v": 18}, {"d": "2026-10-20", "v": 12}, {"d": "2026-10-21", "v": 16}, {"d": "2026-10-22", "v": 9}, {"d": "2026-10-23", "v": 15}], "leader_posts7": 2, "sub_posts7": {}, "peer7": 5, "unmeasured": []}, {"key": "同期_d", "channel": "同期グループ_d", "kind": "同期", "leader": "奥野渚", "leader_name": "渚さん", "start": "2026-10-01", "end": null, "next": "", "note": "", "upcoming": false, "days_in": 24, "days_left": null, "members": [{"name": "黒岩奈々", "is_leader": false, "dm7": 74, "dm_month": 122, "dm_all": 122, "reply_all": 7, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 13, "challenge": {"state": "完走", "date": "10/22", "day": 21}}, {"name": "宇都口千美", "is_leader": false, "dm7": 71, "dm_month": 178, "dm_all": 178, "reply_all": 6, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 21, "challenge": {"state": "完走", "date": "10/22", "day": 21}}, {"name": "大和優希", "is_leader": false, "dm7": 37, "dm_month": 93, "dm_all": 93, "reply_all": 0, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 7, "challenge": {"state": "挑戦中", "day": 20, "stalled": false}}], "left": [], "goals": [], "per": {"w7": {"range": "10/17〜10/23", "m": {"dm": 182, "dm_people": 3, "people": 3, "reply": 6, "listdm": 135, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "毎日1件、新規アプローチ（21日間チャレンジ）", "type": "daily_dm_min", "rate": 100, "per": {"黒岩奈々": 100, "宇都口千美": 100, "大和優希": 100}, "how": "1日1件以上送れた日の割合"}], "ach": 100, "sig": "best"}, "month": {"range": "10/1〜10/23", "m": {"dm": 393, "dm_people": 3, "people": 3, "reply": 13, "listdm": 328, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "毎日1件、新規アプローチ（21日間チャレンジ）", "type": "daily_dm_min", "rate": 96, "per": {"黒岩奈々": 100, "宇都口千美": 100, "大和優希": 87}, "how": "1日1件以上送れた日の割合"}], "ach": 96, "sig": "run"}, "all": {"range": "10/1〜10/23", "m": {"dm": 393, "dm_people": 3, "people": 3, "reply": 13, "listdm": 328, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "毎日1件、新規アプローチ（21日間チャレンジ）", "type": "daily_dm_min", "rate": 96, "per": {"黒岩奈々": 100, "宇都口千美": 100, "大和優希": 87}, "how": "1日1件以上送れた日の割合"}], "ach": 96, "sig": "run"}}, "daily": [{"d": "2026-10-10", "v": 3}, {"d": "2026-10-11", "v": 13}, {"d": "2026-10-12", "v": 22}, {"d": "2026-10-13", "v": 33}, {"d": "2026-10-14", "v": 52}, {"d": "2026-10-15", "v": 21}, {"d": "2026-10-16", "v": 34}, {"d": "2026-10-17", "v": 27}, {"d": "2026-10-18", "v": 17}, {"d": "2026-10-19", "v": 70}, {"d": "2026-10-20", "v": 19}, {"d": "2026-10-21", "v": 18}, {"d": "2026-10-22", "v": 24}, {"d": "2026-10-23", "v": 7}], "leader_posts7": 5, "sub_posts7": {}, "peer7": 14, "unmeasured": []}, {"key": "同期_e", "channel": "同期グループ_e", "kind": "同期", "leader": "奥野渚", "leader_name": "渚さん", "start": "2026-09-24", "end": null, "next": "", "note": "", "upcoming": false, "days_in": 31, "days_left": null, "members": [{"name": "ポンサン円馨", "is_leader": false, "dm7": 59, "dm_month": 229, "dm_all": 257, "reply_all": 20, "sample_all": 1, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 7, "challenge": {"state": "完走", "date": "10/12", "day": 21}}, {"name": "滝澤彩也夏", "is_leader": false, "dm7": 6, "dm_month": 9, "dm_all": 9, "reply_all": 1, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 14, "challenge": {"state": "挑戦中", "day": 0, "stalled": true}}, {"name": "佐藤由賀里", "is_leader": false, "dm7": 12, "dm_month": 46, "dm_all": 46, "reply_all": 0, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-20", "idle": 3, "post7": 6, "challenge": {"state": "挑戦中", "day": 0, "stalled": true}}], "left": [], "goals": [], "per": {"w7": {"range": "10/17〜10/23", "m": {"dm": 77, "dm_people": 3, "people": 3, "reply": 1, "listdm": 72, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "1日1件新規アプローチをする", "type": "daily_dm_min", "rate": 71, "per": {"ポンサン円馨": 71, "滝澤彩也夏": 86, "佐藤由賀里": 57}, "how": "1日1件以上送れた日の割合"}, {"label": "必ず感想・ひとことコメントをする（送った日に報告）", "type": "post_on_dm_days", "rate": 63, "per": {"ポンサン円馨": 80, "滝澤彩也夏": 83, "佐藤由賀里": 25}, "how": "DMを送った日に、グループへ投稿した日の割合"}, {"label": "他の方の投稿にリアクションする", "type": "reactions", "rate": 41, "per": {}, "how": "メンバーの投稿にリアクションが付いた割合"}], "ach": 58, "sig": "alert"}, "month": {"range": "10/1〜10/23", "m": {"dm": 284, "dm_people": 3, "people": 3, "reply": 18, "listdm": 277, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "1日1件新規アプローチをする", "type": "daily_dm_min", "rate": 70, "per": {"ポンサン円馨": 83, "滝澤彩也夏": 44, "佐藤由賀里": 83}, "how": "1日1件以上送れた日の割合"}, {"label": "必ず感想・ひとことコメントをする（送った日に報告）", "type": "post_on_dm_days", "rate": 63, "per": {"ポンサン円馨": 80, "滝澤彩也夏": 75, "佐藤由賀里": 33}, "how": "DMを送った日に、グループへ投稿した日の割合"}, {"label": "他の方の投稿にリアクションする", "type": "reactions", "rate": 45, "per": {}, "how": "メンバーの投稿にリアクションが付いた割合"}], "ach": 59, "sig": "alert"}, "all": {"range": "9/24〜10/23", "m": {"dm": 312, "dm_people": 3, "people": 3, "reply": 21, "listdm": 303, "sample": 1, "order": 0, "pending": 0}, "rules": [{"label": "1日1件新規アプローチをする", "type": "daily_dm_min", "rate": 70, "per": {"ポンサン円馨": 83, "滝澤彩也夏": 44, "佐藤由賀里": 83}, "how": "1日1件以上送れた日の割合"}, {"label": "必ず感想・ひとことコメントをする（送った日に報告）", "type": "post_on_dm_days", "rate": 63, "per": {"ポンサン円馨": 80, "滝澤彩也夏": 75, "佐藤由賀里": 33}, "how": "DMを送った日に、グループへ投稿した日の割合"}, {"label": "他の方の投稿にリアクションする", "type": "reactions", "rate": 45, "per": {}, "how": "メンバーの投稿にリアクションが付いた割合"}], "ach": 59, "sig": "alert"}}, "daily": [{"d": "2026-10-10", "v": 36}, {"d": "2026-10-11", "v": 18}, {"d": "2026-10-12", "v": 18}, {"d": "2026-10-13", "v": 3}, {"d": "2026-10-14", "v": 14}, {"d": "2026-10-15", "v": 12}, {"d": "2026-10-16", "v": 8}, {"d": "2026-10-17", "v": 4}, {"d": "2026-10-18", "v": 3}, {"d": "2026-10-19", "v": 31}, {"d": "2026-10-20", "v": 13}, {"d": "2026-10-21", "v": 9}, {"d": "2026-10-22", "v": 9}, {"d": "2026-10-23", "v": 8}], "leader_posts7": 2, "sub_posts7": {}, "peer7": 4, "unmeasured": []}, {"key": "同期_f", "channel": "同期グループ_f", "kind": "同期", "leader": "奥野渚", "leader_name": "渚さん", "start": "2026-10-15", "end": null, "next": "", "note": "10/15（木）16:30の決起会でルール・目標を決める予定", "upcoming": false, "days_in": 10, "days_left": null, "members": [{"name": "荘所智子", "is_leader": false, "dm7": 55, "dm_month": 55, "dm_all": 55, "reply_all": 1, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 13, "challenge": null}, {"name": "相澤玲子", "is_leader": false, "dm7": 31, "dm_month": 31, "dm_all": 31, "reply_all": 0, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 13, "challenge": null}, {"name": "櫻庭美樹", "is_leader": false, "dm7": 97, "dm_month": 97, "dm_all": 97, "reply_all": 3, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 21, "challenge": null}], "left": [], "goals": [], "per": {"w7": {"range": "10/17〜10/23", "m": {"dm": 183, "dm_people": 3, "people": 3, "reply": 4, "listdm": 164, "sample": 0, "order": 0, "pending": 0}, "rules": [], "ach": null, "sig": "none"}, "month": {"range": "10/15〜10/23", "m": {"dm": 183, "dm_people": 3, "people": 3, "reply": 4, "listdm": 164, "sample": 0, "order": 0, "pending": 0}, "rules": [], "ach": null, "sig": "none"}, "all": {"range": "10/15〜10/23", "m": {"dm": 183, "dm_people": 3, "people": 3, "reply": 4, "listdm": 164, "sample": 0, "order": 0, "pending": 0}, "rules": [], "ach": null, "sig": "none"}}, "daily": [{"d": "2026-10-10", "v": 0}, {"d": "2026-10-11", "v": 0}, {"d": "2026-10-12", "v": 0}, {"d": "2026-10-13", "v": 0}, {"d": "2026-10-14", "v": 0}, {"d": "2026-10-15", "v": 0}, {"d": "2026-10-16", "v": 0}, {"d": "2026-10-17", "v": 0}, {"d": "2026-10-18", "v": 0}, {"d": "2026-10-19", "v": 0}, {"d": "2026-10-20", "v": 14}, {"d": "2026-10-21", "v": 37}, {"d": "2026-10-22", "v": 58}, {"d": "2026-10-23", "v": 74}], "leader_posts7": 19, "sub_posts7": {}, "peer7": 27, "unmeasured": []}, {"key": "シャッフル2期_a", "channel": "シャッフルクラス_a", "kind": "シャッフル", "leader": "奥野渚", "leader_name": "渚さん", "start": "2026-09-09", "end": "2026-10-31", "next": "", "note": "", "upcoming": false, "days_in": 46, "days_left": 7, "members": [{"name": "大村美緒", "is_leader": false, "dm7": 19, "dm_month": 84, "dm_all": 149, "reply_all": 12, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 8, "challenge": null}, {"name": "齋藤倫実", "is_leader": false, "dm7": 0, "dm_month": 0, "dm_all": 0, "reply_all": 0, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-08-16", "idle": 68, "post7": 0, "challenge": null}, {"name": "伊瀬知弘子", "is_leader": false, "dm7": 0, "dm_month": 0, "dm_all": 0, "reply_all": 0, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-08-23", "idle": 61, "post7": 0, "challenge": null}], "left": [], "goals": [], "per": {"w7": {"range": "10/17〜10/23", "m": {"dm": 19, "dm_people": 1, "people": 3, "reply": 0, "listdm": 14, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "1日1件、新規に送る", "type": "daily_dm_min", "rate": 33, "per": {"大村美緒": 100, "齋藤倫実": 0, "伊瀬知弘子": 0}, "how": "1日1件以上送れた日の割合"}, {"label": "作業を始める前に意思表示", "type": "post_on_dm_days", "rate": 100, "per": {"大村美緒": 100, "齋藤倫実": null, "伊瀬知弘子": null}, "how": "DMを送った日に、グループへ投稿した日の割合"}, {"label": "できない日は「できない」と伝える", "type": "post_on_off_days", "rate": 0, "per": {"大村美緒": null, "齋藤倫実": 0, "伊瀬知弘子": 0}, "how": "DMがない日に、グループへ投稿した日の割合"}], "ach": 44, "sig": "alert"}, "month": {"range": "10/1〜10/23", "m": {"dm": 84, "dm_people": 1, "people": 3, "reply": 4, "listdm": 79, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "1日1件、新規に送る", "type": "daily_dm_min", "rate": 33, "per": {"大村美緒": 100, "齋藤倫実": 0, "伊瀬知弘子": 0}, "how": "1日1件以上送れた日の割合"}, {"label": "作業を始める前に意思表示", "type": "post_on_dm_days", "rate": 91, "per": {"大村美緒": 91, "齋藤倫実": null, "伊瀬知弘子": null}, "how": "DMを送った日に、グループへ投稿した日の割合"}, {"label": "できない日は「できない」と伝える", "type": "post_on_off_days", "rate": 0, "per": {"大村美緒": null, "齋藤倫実": 0, "伊瀬知弘子": 0}, "how": "DMがない日に、グループへ投稿した日の割合"}], "ach": 41, "sig": "alert"}, "all": {"range": "9/9〜10/23", "m": {"dm": 149, "dm_people": 1, "people": 3, "reply": 12, "listdm": 144, "sample": 0, "order": 0, "pending": 0}, "rules": [{"label": "1日1件、新規に送る", "type": "daily_dm_min", "rate": 33, "per": {"大村美緒": 100, "齋藤倫実": 0, "伊瀬知弘子": 0}, "how": "1日1件以上送れた日の割合"}, {"label": "作業を始める前に意思表示", "type": "post_on_dm_days", "rate": 89, "per": {"大村美緒": 89, "齋藤倫実": null, "伊瀬知弘子": null}, "how": "DMを送った日に、グループへ投稿した日の割合"}, {"label": "できない日は「できない」と伝える", "type": "post_on_off_days", "rate": 2, "per": {"大村美緒": null, "齋藤倫実": 4, "伊瀬知弘子": 0}, "how": "DMがない日に、グループへ投稿した日の割合"}], "ach": 41, "sig": "alert"}}, "daily": [{"d": "2026-10-10", "v": 6}, {"d": "2026-10-11", "v": 3}, {"d": "2026-10-12", "v": 6}, {"d": "2026-10-13", "v": 5}, {"d": "2026-10-14", "v": 5}, {"d": "2026-10-15", "v": 4}, {"d": "2026-10-16", "v": 5}, {"d": "2026-10-17", "v": 4}, {"d": "2026-10-18", "v": 1}, {"d": "2026-10-19", "v": 8}, {"d": "2026-10-20", "v": 1}, {"d": "2026-10-21", "v": 1}, {"d": "2026-10-22", "v": 1}, {"d": "2026-10-23", "v": 3}], "leader_posts7": 13, "sub_posts7": {}, "peer7": 1, "unmeasured": []}, {"key": "シャッフル2期_b", "channel": "シャッフルクラス_b", "kind": "シャッフル", "leader": "平島雄太", "leader_name": "平島さん", "start": "2026-09-14", "end": "2026-10-31", "next": "", "note": "", "upcoming": false, "days_in": 41, "days_left": 7, "members": [{"name": "平島雄太", "is_leader": true, "dm7": 106, "dm_month": 476, "dm_all": 593, "reply_all": 24, "sample_all": 0, "order_all": 0, "pending": 1, "last_dm": "2026-10-23", "idle": 0, "post7": 13, "challenge": null}, {"name": "森まゆ子", "is_leader": false, "dm7": 42, "dm_month": 135, "dm_all": 240, "reply_all": 4, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 7, "challenge": null}, {"name": "笠田秀樹", "is_leader": false, "dm7": 54, "dm_month": 136, "dm_all": 241, "reply_all": 4, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 4, "challenge": null}], "left": [], "goals": [{"label": "1人サンプル決済2件（10/31まで）", "type": "samples", "rate": 0, "raw": 0, "act": 0, "exp": 5.0, "goal_total": 6, "frac": 83, "target": "1人2件（10/31まで）", "now": "サンプル決済 合計0件（3人）", "per": {"平島雄太": 0, "森まゆ子": 0, "笠田秀樹": 0}, "need_day": null, "wait": null}], "per": {"w7": {"range": "10/17〜10/23", "m": {"dm": 202, "dm_people": 3, "people": 3, "reply": 2, "listdm": 199, "sample": 0, "order": 0, "pending": 1}, "rules": [{"label": "週42件アプローチ（「◯/42件」で報告）", "type": "weekly_dm_min", "rate": 100, "per": {"平島雄太": 100, "森まゆ子": 100, "笠田秀樹": 100}, "how": "週42件に届いた週の割合（「◯/42件」の報告も見る）"}, {"label": "作業開始時に「GO」と投稿", "type": "post_on_dm_days", "rate": 27, "per": {"平島雄太": 40, "森まゆ子": 17, "笠田秀樹": 25}, "how": "DMを送った日に、グループへ投稿した日の割合（「GO」などの言葉を含む投稿）"}], "ach": 42, "sig": "alert"}, "month": {"range": "10/1〜10/23", "m": {"dm": 747, "dm_people": 3, "people": 3, "reply": 18, "listdm": 735, "sample": 0, "order": 0, "pending": 1}, "rules": [{"label": "週42件アプローチ（「◯/42件」で報告）", "type": "weekly_dm_min", "rate": 100, "per": {"平島雄太": 100, "森まゆ子": 100, "笠田秀樹": 100}, "how": "週42件に届いた週の割合（「◯/42件」の報告も見る）"}, {"label": "作業開始時に「GO」と投稿", "type": "post_on_dm_days", "rate": 31, "per": {"平島雄太": 53, "森まゆ子": 18, "笠田秀樹": 22}, "how": "DMを送った日に、グループへ投稿した日の割合（「GO」などの言葉を含む投稿）"}], "ach": 44, "sig": "alert"}, "all": {"range": "9/14〜10/23", "m": {"dm": 1074, "dm_people": 3, "people": 3, "reply": 32, "listdm": 1050, "sample": 0, "order": 0, "pending": 1}, "rules": [{"label": "週42件アプローチ（「◯/42件」で報告）", "type": "weekly_dm_min", "rate": 93, "per": {"平島雄太": 80, "森まゆ子": 100, "笠田秀樹": 100}, "how": "週42件に届いた週の割合（「◯/42件」の報告も見る）"}, {"label": "作業開始時に「GO」と投稿", "type": "post_on_dm_days", "rate": 44, "per": {"平島雄太": 58, "森まゆ子": 29, "笠田秀樹": 45}, "how": "DMを送った日に、グループへ投稿した日の割合（「GO」などの言葉を含む投稿）"}], "ach": 46, "sig": "alert"}}, "daily": [{"d": "2026-10-10", "v": 76}, {"d": "2026-10-11", "v": 78}, {"d": "2026-10-12", "v": 97}, {"d": "2026-10-13", "v": 5}, {"d": "2026-10-14", "v": 30}, {"d": "2026-10-15", "v": 77}, {"d": "2026-10-16", "v": 1}, {"d": "2026-10-17", "v": 10}, {"d": "2026-10-18", "v": 22}, {"d": "2026-10-19", "v": 48}, {"d": "2026-10-20", "v": 24}, {"d": "2026-10-21", "v": 40}, {"d": "2026-10-22", "v": 23}, {"d": "2026-10-23", "v": 35}], "leader_posts7": 13, "sub_posts7": {}, "peer7": 2, "unmeasured": ["毎週日曜10時の作業会（30分作業＋30分雑談・質問）"]}, {"key": "シャッフル2期_c", "channel": "シャッフルクラス_c", "kind": "シャッフル", "leader": "平島雄太", "leader_name": "平島さん", "start": "2026-09-22", "end": "2026-10-31", "next": "", "note": "", "upcoming": false, "days_in": 33, "days_left": 7, "members": [{"name": "伊吾田満利子", "is_leader": false, "dm7": 115, "dm_month": 297, "dm_all": 345, "reply_all": 27, "sample_all": 0, "order_all": 0, "pending": 1, "last_dm": "2026-10-23", "idle": 0, "post7": 11, "challenge": null}, {"name": "坂本響子", "is_leader": false, "dm7": 134, "dm_month": 235, "dm_all": 247, "reply_all": 9, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-10-23", "idle": 0, "post7": 4, "challenge": null}, {"name": "平島雄太", "is_leader": true, "dm7": 106, "dm_month": 476, "dm_all": 548, "reply_all": 22, "sample_all": 0, "order_all": 0, "pending": 1, "last_dm": "2026-10-23", "idle": 0, "post7": 13, "challenge": null}], "left": [], "goals": [{"label": "月1件のサンプル獲得", "type": "samples_month", "rate": 0, "raw": 0, "act": 0, "exp": 0.7, "goal_total": 1, "frac": 74, "target": "クラスで月1件", "now": "10月 0件", "per": {}, "need_day": null, "wait": null}], "per": {"w7": {"range": "10/17〜10/23", "m": {"dm": 355, "dm_people": 3, "people": 3, "reply": 11, "listdm": 355, "sample": 0, "order": 0, "pending": 2}, "rules": [{"label": "週42件アプローチ（1日6件目安）", "type": "weekly_dm_min", "rate": 100, "per": {"伊吾田満利子": 100, "坂本響子": 100, "平島雄太": 100}, "how": "週42件に届いた週の割合（「◯/42件」の報告も見る）"}, {"label": "作業の開始・終了を報告", "type": "post_on_dm_days", "rate": 79, "per": {"伊吾田満利子": 83, "坂本響子": 75, "平島雄太": 80}, "how": "DMを送った日に、グループへ投稿した日の割合"}], "ach": 60, "sig": "alert"}, "month": {"range": "10/1〜10/23", "m": {"dm": 1008, "dm_people": 3, "people": 3, "reply": 46, "listdm": 1000, "sample": 0, "order": 0, "pending": 2}, "rules": [{"label": "週42件アプローチ（1日6件目安）", "type": "weekly_dm_min", "rate": 89, "per": {"伊吾田満利子": 100, "坂本響子": 67, "平島雄太": 100}, "how": "週42件に届いた週の割合（「◯/42件」の報告も見る）"}, {"label": "作業の開始・終了を報告", "type": "post_on_dm_days", "rate": 87, "per": {"伊吾田満利子": 95, "坂本響子": 88, "平島雄太": 79}, "how": "DMを送った日に、グループへ投稿した日の割合"}], "ach": 59, "sig": "alert"}, "all": {"range": "9/22〜10/23", "m": {"dm": 1140, "dm_people": 3, "people": 3, "reply": 58, "listdm": 1120, "sample": 0, "order": 0, "pending": 2}, "rules": [{"label": "週42件アプローチ（1日6件目安）", "type": "weekly_dm_min", "rate": 83, "per": {"伊吾田満利子": 100, "坂本響子": 50, "平島雄太": 100}, "how": "週42件に届いた週の割合（「◯/42件」の報告も見る）"}, {"label": "作業の開始・終了を報告", "type": "post_on_dm_days", "rate": 87, "per": {"伊吾田満利子": 96, "坂本響子": 80, "平島雄太": 85}, "how": "DMを送った日に、グループへ投稿した日の割合"}], "ach": 57, "sig": "alert"}}, "daily": [{"d": "2026-10-10", "v": 100}, {"d": "2026-10-11", "v": 80}, {"d": "2026-10-12", "v": 140}, {"d": "2026-10-13", "v": 49}, {"d": "2026-10-14", "v": 33}, {"d": "2026-10-15", "v": 56}, {"d": "2026-10-16", "v": 18}, {"d": "2026-10-17", "v": 10}, {"d": "2026-10-18", "v": 0}, {"d": "2026-10-19", "v": 82}, {"d": "2026-10-20", "v": 41}, {"d": "2026-10-21", "v": 85}, {"d": "2026-10-22", "v": 79}, {"d": "2026-10-23", "v": 58}], "leader_posts7": 13, "sub_posts7": {}, "peer7": 2, "unmeasured": ["週1回の作業会（雑談・シェア・黙々作業 1時間）"]}, {"key": "シャッフル2期_d", "channel": "シャッフルクラス_d", "kind": "シャッフル", "leader": "佐藤源太", "leader_name": "源太さん", "start": "2026-09-09", "end": "2026-11-08", "next": "", "note": "", "upcoming": false, "days_in": 46, "days_left": 15, "members": [{"name": "佐藤源太", "is_leader": true, "dm7": 135, "dm_month": 487, "dm_all": 666, "reply_all": 11, "sample_all": 3, "order_all": 1, "pending": 0, "last_dm": "2026-10-22", "idle": 1, "post7": 4, "challenge": null}, {"name": "山本朋実", "is_leader": false, "dm7": 0, "dm_month": 0, "dm_all": 10, "reply_all": 0, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-09-16", "idle": 37, "post7": 0, "challenge": null}, {"name": "佐藤志穂", "is_leader": false, "dm7": 0, "dm_month": 0, "dm_all": 70, "reply_all": 0, "sample_all": 0, "order_all": 0, "pending": 0, "last_dm": "2026-09-16", "idle": 37, "post7": 0, "challenge": null}], "left": [], "goals": [{"label": "2ヶ月後に1人1件の成約", "type": "orders", "rate": 33, "raw": 45, "act": 1, "exp": 2.2, "goal_total": 3, "frac": 74, "target": "1人1件（11/8まで）", "now": "成約 合計1件（3人）", "per": {"佐藤源太": 1, "山本朋実": 0, "佐藤志穂": 0}, "need_day": null, "wait": null}], "per": {"w7": {"range": "10/17〜10/23", "m": {"dm": 135, "dm_people": 1, "people": 3, "reply": 1, "listdm": 122, "sample": 1, "order": 0, "pending": 0}, "rules": [{"label": "新規アプローチ10件／日", "type": "daily_dm_min", "rate": 19, "per": {"佐藤源太": 57, "山本朋実": 0, "佐藤志穂": 0}, "how": "1日10件以上送れた日の割合"}, {"label": "DM送信前にグループへGOと報告", "type": "post_on_dm_days", "rate": 25, "per": {"佐藤源太": 25, "山本朋実": null, "佐藤志穂": null}, "how": "DMを送った日に、グループへ投稿した日の割合（「GO」などの言葉を含む投稿）"}, {"label": "できない日は報告＋次のアクション", "type": "post_on_off_days", "rate": 11, "per": {"佐藤源太": 33, "山本朋実": 0, "佐藤志穂": 0}, "how": "DMがない日に、グループへ投稿した日の割合"}], "ach": 22, "sig": "alert"}, "month": {"range": "10/1〜10/23", "m": {"dm": 487, "dm_people": 1, "people": 3, "reply": 7, "listdm": 443, "sample": 2, "order": 0, "pending": 0}, "rules": [{"label": "新規アプローチ10件／日", "type": "daily_dm_min", "rate": 23, "per": {"佐藤源太": 70, "山本朋実": 0, "佐藤志穂": 0}, "how": "1日10件以上送れた日の割合"}, {"label": "DM送信前にグループへGOと報告", "type": "post_on_dm_days", "rate": 29, "per": {"佐藤源太": 29, "山本朋実": null, "佐藤志穂": null}, "how": "DMを送った日に、グループへ投稿した日の割合（「GO」などの言葉を含む投稿）"}, {"label": "できない日は報告＋次のアクション", "type": "post_on_off_days", "rate": 9, "per": {"佐藤源太": 17, "山本朋実": 9, "佐藤志穂": 0}, "how": "DMがない日に、グループへ投稿した日の割合"}], "ach": 24, "sig": "alert"}, "all": {"range": "9/9〜10/23", "m": {"dm": 746, "dm_people": 3, "people": 3, "reply": 11, "listdm": 696, "sample": 3, "order": 1, "pending": 0}, "rules": [{"label": "新規アプローチ10件／日", "type": "daily_dm_min", "rate": 24, "per": {"佐藤源太": 60, "山本朋実": 2, "佐藤志穂": 11}, "how": "1日10件以上送れた日の割合"}, {"label": "DM送信前にグループへGOと報告", "type": "post_on_dm_days", "rate": 39, "per": {"佐藤源太": 34, "山本朋実": 0, "佐藤志穂": 83}, "how": "DMを送った日に、グループへ投稿した日の割合（「GO」などの言葉を含む投稿）"}, {"label": "できない日は報告＋次のアクション", "type": "post_on_off_days", "rate": 9, "per": {"佐藤源太": 12, "山本朋実": 11, "佐藤志穂": 5}, "how": "DMがない日に、グループへ投稿した日の割合"}], "ach": 26, "sig": "alert"}}, "daily": [{"d": "2026-10-10", "v": 0}, {"d": "2026-10-11", "v": 0}, {"d": "2026-10-12", "v": 31}, {"d": "2026-10-13", "v": 0}, {"d": "2026-10-14", "v": 30}, {"d": "2026-10-15", "v": 36}, {"d": "2026-10-16", "v": 33}, {"d": "2026-10-17", "v": 0}, {"d": "2026-10-18", "v": 0}, {"d": "2026-10-19", "v": 32}, {"d": "2026-10-20", "v": 15}, {"d": "2026-10-21", "v": 42}, {"d": "2026-10-22", "v": 46}, {"d": "2026-10-23", "v": 0}], "leader_posts7": 4, "sub_posts7": {}, "peer7": 0, "unmeasured": ["週1作業会：毎週水曜23時〜"]}], "actions": [{"level": "alert", "kind": "rule", "group": "シャッフル2期_d", "leader": "佐藤源太", "who": "源太さん", "title": "シャッフル2期_d：「できない日は報告＋次のアクション」を立て直す", "why": ["いちばん守れていないルール：「できない日は報告＋次のアクション」11%", "とくに：佐藤源太さん 33%・山本朋実さん 0%・佐藤志穂さん 0%", "打ち手：「今日はできません」と書いていい空気をつくる。リーダーが先に、できない日の報告の見本を出す"], "people": ["佐藤源太", "山本朋実", "佐藤志穂"], "score": 378, "groups": ["シャッフル2期_d"], "leaders": ["佐藤源太"]}, {"level": "alert", "kind": "goal", "group": "シャッフル2期_b", "leader": "平島雄太", "who": "平島さん", "title": "シャッフル2期_b：目標「1人サンプル決済2件（10/31まで）」に追いつく", "why": ["目標「1人サンプル決済2件（10/31まで）」：今 0件／今日の目安 5.0件", "このグループの返信（開始から）32件", "打ち手：返信が来ている相手に、サンプルの案内（2通目）を今週中に送るようグループで声をかける"], "people": [], "score": 358, "groups": ["シャッフル2期_b"], "leaders": ["平島雄太"]}, {"level": "alert", "kind": "rule", "group": "同期_b", "leader": "奥野渚", "who": "渚さん", "title": "同期_b：「作業開始時にGOと投稿」を立て直す", "why": ["いちばん守れていないルール：「作業開始時にGOと投稿」0%", "とくに：吉川真須美さん 0%・中田早紀さん 0%・音羽顕慈さん 0%・河守幸絵さん 0%", "打ち手：作業前の「GO」をリーダーが毎朝先に投稿して、ほかのメンバーが続きやすくする"], "people": ["吉川真須美", "中田早紀", "音羽顕慈", "河守幸絵"], "score": 357, "groups": ["同期_b"], "leaders": ["奥野渚"]}, {"level": "alert", "kind": "rule", "group": "同期_c", "leader": "奥野渚", "who": "渚さん", "title": "同期_c：「1日1回はみなさんに声がけ」を立て直す", "why": ["いちばん守れていないルール：「1日1回はみなさんに声がけ」19%", "とくに：森山良子さん 0%・大湾梨香子さん 43%・臼田亜子さん 14%", "打ち手：リーダーが毎日1人を名指しでほめて、声かけの見本を見せる"], "people": ["森山良子", "大湾梨香子", "臼田亜子"], "score": 357, "groups": ["同期_c"], "leaders": ["奥野渚"]}, {"level": "alert", "kind": "rule", "group": "シャッフル2期_a", "leader": "奥野渚", "who": "渚さん", "title": "シャッフル2期_a：「できない日は「できない」と伝える」を立て直す", "why": ["いちばん守れていないルール：「できない日は「できない」と伝える」0%", "とくに：齋藤倫実さん 0%・伊瀬知弘子さん 0%", "打ち手：「今日はできません」と書いていい空気をつくる。リーダーが先に、できない日の報告の見本を出す"], "people": ["齋藤倫実", "伊瀬知弘子"], "score": 356, "groups": ["シャッフル2期_a"], "leaders": ["奥野渚"]}, {"level": "alert", "kind": "rule", "group": "同期_e", "leader": "奥野渚", "who": "渚さん", "title": "同期_e：「他の方の投稿にリアクションする」を立て直す", "why": ["いちばん守れていないルール：「他の方の投稿にリアクションする」41%", "打ち手：投稿したらほかのメンバーが必ずリアクション、をグループで再確認する"], "people": [], "score": 342, "groups": ["同期_e"], "leaders": ["奥野渚"]}, {"level": "alert", "kind": "goal", "group": "シャッフル2期_c", "leader": "平島雄太", "who": "平島さん", "title": "シャッフル2期_c：目標「月1件のサンプル獲得」に追いつく", "why": ["目標「月1件のサンプル獲得」：今 0件／今日の目安 0.7件", "このグループの返信（開始から）58件", "打ち手：返信が来ている相手に、サンプルの案内（2通目）を今週中に送るようグループで声をかける"], "people": [], "score": 340, "groups": ["シャッフル2期_c"], "leaders": ["平島雄太"]}, {"level": "alert", "kind": "stalled", "group": "シャッフル2期_a", "leader": "奥野渚", "who": "渚さん", "title": "シャッフル2期_a：この7日DMがない人に1対1で声をかける（齋藤倫実さん・伊瀬知弘子さん）", "why": ["齋藤倫実さん：最後のDM 8/16（68日前）", "伊瀬知弘子さん：最後のDM 8/23（61日前）", "責める形ではなく「最近どうですか？」から。15分だけ一緒に1通送る時間をとる"], "people": ["齋藤倫実", "伊瀬知弘子"], "score": 320, "groups": ["シャッフル2期_a"], "leaders": ["奥野渚"]}, {"level": "alert", "kind": "stalled", "group": "シャッフル2期_d", "leader": "佐藤源太", "who": "源太さん", "title": "シャッフル2期_d：この7日DMがない人に1対1で声をかける（山本朋実さん・佐藤志穂さん）", "why": ["山本朋実さん：最後のDM 9/16（37日前）", "佐藤志穂さん：最後のDM 9/16（37日前）", "責める形ではなく「最近どうですか？」から。15分だけ一緒に1通送る時間をとる"], "people": ["山本朋実", "佐藤志穂"], "score": 320, "groups": ["シャッフル2期_d"], "leaders": ["佐藤源太"]}, {"level": "watch", "kind": "setup", "group": "同期_f", "leader": "奥野渚", "who": "KODAIさん", "title": "同期_f：ルール・目標を決めてもらう", "why": ["ルールも目標もまだ設定されていません（達成率が出せません）"], "people": [], "score": 230, "groups": ["同期_f"], "leaders": ["奥野渚"]}, {"level": "watch", "kind": "stalled", "group": "同期_b", "leader": "奥野渚", "who": "渚さん", "title": "同期_b：この7日DMがない人に1対1で声をかける（杉本ちえこさん）", "why": ["杉本ちえこさん：最後のDM 9/30（23日前）", "責める形ではなく「最近どうですか？」から。15分だけ一緒に1通送る時間をとる"], "people": ["杉本ちえこ"], "score": 215, "groups": ["同期_b"], "leaders": ["奥野渚"]}, {"level": "watch", "kind": "stalled", "group": "同期_c", "leader": "奥野渚", "who": "渚さん", "title": "同期_c：この7日DMがない人に1対1で声をかける（森山良子さん）", "why": ["森山良子さん：最後のDM 9/30（23日前）", "責める形ではなく「最近どうですか？」から。15分だけ一緒に1通送る時間をとる"], "people": ["森山良子"], "score": 215, "groups": ["同期_c"], "leaders": ["奥野渚"]}, {"level": "info", "kind": "pending", "group": "同期_b", "leader": "奥野渚", "who": "渚さん", "title": "同期_b：サンプルの決済待ちにリマインド（河守幸絵さん）", "why": ["河守幸絵さん：決済待ち 1件", "決済が済めばサンプル決済の実績になります"], "people": ["河守幸絵"], "score": 150, "groups": ["同期_b"], "leaders": ["奥野渚"]}, {"level": "info", "kind": "pending", "group": "シャッフル2期_b", "leader": "平島雄太", "who": "平島さん", "title": "シャッフル2期_b：サンプルの決済待ちにリマインド（平島雄太さん）", "why": ["平島雄太さん：決済待ち 1件", "決済が済めばサンプル決済の実績になります"], "people": ["平島雄太"], "score": 150, "groups": ["シャッフル2期_b"], "leaders": ["平島雄太"]}, {"level": "info", "kind": "pending", "group": "シャッフル2期_c", "leader": "平島雄太", "who": "平島さん", "title": "シャッフル2期_c：サンプルの決済待ちにリマインド（伊吾田満利子さん）", "why": ["伊吾田満利子さん：決済待ち 1件", "決済が済めばサンプル決済の実績になります"], "people": ["伊吾田満利子"], "score": 150, "groups": ["シャッフル2期_c"], "leaders": ["平島雄太"]}, {"level": "info", "kind": "ending", "group": "同期_b", "leader": "奥野渚", "who": "渚さん", "title": "同期_b：10/31で終了。次の場への移行を決めて全員に案内（あと7日）", "why": ["11月からシャッフルクラスへ移行", "終わる1週間前までに、次のクラスの申込みを全員に案内する"], "people": [], "score": 123, "groups": ["同期_b"], "leaders": ["奥野渚"]}, {"level": "info", "kind": "ending", "group": "シャッフル2期_a", "leader": "奥野渚", "who": "KODAIさん", "title": "シャッフル2期_a・シャッフル2期_b・シャッフル2期_c：10/31で終了。次の場への移行を決めて全員に案内（あと7日）", "why": ["終わったあと次のグループに移らなかった人は止まりやすい（シャッフル1期のあと）", "終わる1週間前までに、次のクラスの申込みを全員に案内する"], "people": [], "score": 123, "groups": ["シャッフル2期_a", "シャッフル2期_b", "シャッフル2期_c"], "leaders": ["奥野渚", "平島雄太"]}, {"level": "info", "kind": "ending", "group": "シャッフル2期_d", "leader": "佐藤源太", "who": "KODAIさん", "title": "シャッフル2期_d：11/8で終了。次の場への移行を決めて全員に案内（あと15日）", "why": ["終わったあと次のグループに移らなかった人は止まりやすい（シャッフル1期のあと）", "終わる1週間前までに、次のクラスの申込みを全員に案内する"], "people": [], "score": 115, "groups": ["シャッフル2期_d"], "leaders": ["佐藤源太"]}, {"level": "info", "kind": "setup", "group": "同期グループ_g", "leader": "", "who": "KODAIさん", "title": "#同期グループ_g：メンバー・リーダー・開始日を決めて、このページに登録する", "why": ["チャンネルはあるが、まだ設定に入っていません（投稿 10件）"], "people": [], "score": 105, "groups": ["同期グループ_g"], "leaders": []}, {"level": "good", "kind": "praise", "group": "同期_d", "leader": "奥野渚", "who": "渚さん", "title": "同期_d：全部のルール・目標を達成中。グループでほめる", "why": ["直近7日の達成率 100%"], "people": [], "score": 20, "groups": ["同期_d"], "leaders": ["奥野渚"]}], "summary": {"all": {"w7": {"dm": 1287, "reply": 38, "sample": 1, "order": 0, "people": 28, "dm_people": 22, "ach": 52, "sig": "alert", "count": {"alert": 7, "best": 1, "none": 1}}, "month": {"dm": 3457, "reply": 152, "sample": 2, "order": 0, "people": 28, "dm_people": 22, "ach": 50, "sig": "alert", "count": {"alert": 7, "run": 1, "none": 1}}, "all": {"dm": 4867, "reply": 242, "sample": 5, "order": 1, "people": 28, "dm_people": 26, "ach": 53, "sig": "alert", "count": {"alert": 7, "run": 1, "none": 1}}}, "奥野渚": {"w7": {"dm": 701, "reply": 25, "sample": 0, "order": 0, "people": 20, "dm_people": 16, "ach": 58, "sig": "alert", "count": {"alert": 4, "best": 1, "none": 1}}, "month": {"dm": 1691, "reply": 95, "sample": 0, "order": 0, "people": 20, "dm_people": 16, "ach": 55, "sig": "alert", "count": {"alert": 4, "run": 1, "none": 1}}, "all": {"dm": 2455, "reply": 163, "sample": 2, "order": 0, "people": 20, "dm_people": 18, "ach": 59, "sig": "alert", "count": {"alert": 4, "run": 1, "none": 1}}}, "平島雄太": {"w7": {"dm": 451, "reply": 12, "sample": 0, "order": 0, "people": 5, "dm_people": 5, "ach": 51, "sig": "alert", "count": {"alert": 2}}, "month": {"dm": 1279, "reply": 50, "sample": 0, "order": 0, "people": 5, "dm_people": 5, "ach": 52, "sig": "alert", "count": {"alert": 2}}, "all": {"dm": 1666, "reply": 68, "sample": 0, "order": 0, "people": 5, "dm_people": 5, "ach": 52, "sig": "alert", "count": {"alert": 2}}}, "佐藤源太": {"w7": {"dm": 135, "reply": 1, "sample": 1, "order": 0, "people": 3, "dm_people": 1, "ach": 22, "sig": "alert", "count": {"alert": 1}}, "month": {"dm": 487, "reply": 7, "sample": 2, "order": 0, "people": 3, "dm_people": 1, "ach": 24, "sig": "alert", "count": {"alert": 1}}, "all": {"dm": 746, "reply": 11, "sample": 3, "order": 1, "people": 3, "dm_people": 3, "ach": 26, "sig": "alert", "count": {"alert": 1}}}}, "src": {"list": "10/24 17:15", "form": "10/24 17:15", "sales": "10/24 17:18", "discord": null}};
+const SIG = {
+  alert: { t: "介入", r: "70%未満", ic: '<path d="M12 8v5M12 16.5h.01"/><path d="M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>' },
+  watch: { t: "もう一歩", r: "70〜79%", ic: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' },
+  good:  { t: "いいペース", r: "80〜89%", ic: '<path d="M4 14l5 5L20 7"/>' },
+  run:   { t: "このまま走り切れる", r: "90〜99%", ic: '<path d="M5 12h14M13 6l6 6-6 6"/>' },
+  best:  { t: "最高", r: "100%", ic: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>' },
+  none:  { t: "判定なし", r: "", ic: '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>' }
+};
+const ORDER = ["alert", "watch", "good", "run", "best"];
+const LKEY = { nagisa: "奥野渚", hirashima: "平島雄太", genta: "佐藤源太" };
+const PLAB = { w7: "直近7日", month: "今月", all: "開始から" };
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = n => n == null ? "—" : Number(n).toLocaleString("ja-JP");
+const sigOf = v => v == null ? "none" : v >= 100 ? "best" : v >= 90 ? "run" : v >= 80 ? "good" : v >= 70 ? "watch" : "alert";
+const pill = (s, solid) => `<span class="pill ${solid ? "solid " : ""}s-${s}"><svg viewBox="0 0 24 24" aria-hidden="true">${SIG[s].ic}</svg>${SIG[s].t}</span>`;
+const md = iso => { if (!iso) return "—"; const d = new Date(iso + "T00:00:00"); return (d.getMonth() + 1) + "/" + d.getDate(); };
+const gid = k => "g-" + k.replace(/[^\w]/g, c => c.charCodeAt(0).toString(36));
+const short = k => k.replace("シャッフル2期_", "シャッフル").replace("同期_", "同期");
+
+let st = { p: "w7", l: "all" };
+try { const h = location.hash.slice(1); if (LKEY[h]) st.l = LKEY[h]; } catch (e) {}
+const lname = l => l === "all" ? "全員" : (D.leaders.find(x => x.key === l) || {}).name || l;
+const inScope = g => st.l === "all" || g.leader === st.l;
+
+function renderSegs() {
+  const sl = document.getElementById("segLeader");
+  sl.innerHTML = [`<button type="button" data-v="all">全員</button>`].concat(D.leaders.map(x => `<button type="button" data-v="${esc(x.key)}">${esc(x.name)}</button>`)).join("");
+  for (const [id, key] of [["segPeriod", "p"], ["segLeader", "l"]]) {
+    document.querySelectorAll(`#${id} button`).forEach(b => {
+      b.setAttribute("aria-pressed", String(b.dataset.v === st[key]));
+      b.onclick = () => { st[key] = b.dataset.v; render(); };
+    });
+  }
+}
+
+function renderKV() {
+  const S = D.summary[st.l][st.p], gs = D.groups.filter(g => inScope(g) && !g.upcoming);
+  document.getElementById("kvScope").textContent = st.l === "all" ? "ALL · 全グループ" : "LEADER · " + lname(st.l) + "のグループ";
+  document.getElementById("kvLb").textContent = st.l === "all" ? "全グループの達成率" : lname(st.l) + "のグループの達成率";
+  document.getElementById("kvAch").innerHTML = S.ach == null ? "—" : `${S.ach}<small>%</small>`;
+  document.getElementById("kvPill").innerHTML = pill(S.sig, true);
+  const nAlert = gs.filter(g => g.per[st.p].sig === "alert").length;
+  const rng = st.p === "all" ? "それぞれの開始日〜" + md(D.y) : D.ranges[st.p];
+  document.getElementById("kvSub").innerHTML = `${gs.length}グループの平均（${PLAB[st.p]}・${esc(rng)}）` + (nAlert ? `　介入が必要 <b>${nAlert}</b> グループ` : "　介入が必要なグループはありません");
+  document.getElementById("track").innerHTML = ORDER.map(s => {
+    const in_ = gs.filter(g => g.per[st.p].sig === s);
+    return `<li class="stop s-${s}${in_.length ? "" : " zero"}${s === "alert" && in_.length ? " alert-on" : ""}"><div class="hd"><span class="dot"></span>${SIG[s].t}</div><span class="rg">${SIG[s].r}</span>
+      <span class="cnt">${in_.length}<span>グループ</span></span>
+      <div class="gchips">${in_.map(g => `<a href="#${gid(g.key)}" title="${esc(g.key)}"><span class="lg">${esc(short(g.key))}</span><span class="sm">${esc(short(g.key).replace("シャッフル", "シャ"))}</span></a>`).join("")}</div></li>`;
+  }).join("");
+  const T = [
+    ["DM送信", S.dm, "件", `${S.people}人中 ${S.dm_people}人が送信`, '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>', ""],
+    ["返信", S.reply, "件", "この期間に送ったDMへの返信", '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>', ""],
+    ["サンプル決済", S.sample, "件", "フォームの決済済み", '<path d="M20 7H4v13h16zM2 3h20v4H2zM10 11h4"/>', ""],
+    ["成約", S.order, "件", "売上表の成約", '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>', "deal"]];
+  document.getElementById("totals").innerHTML = T.map(([k, v, u, s, ic, c]) => `<div class="tot ${c}"><span class="k"><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg>${k}</span><span class="v">${fmt(v)}<span>${u}</span></span><span class="s">${s}</span></div>`).join("");
+  const note = document.getElementById("leaderNote");
+  note.hidden = st.l === "all";
+  if (st.l !== "all") note.innerHTML = `<b>${esc(lname(st.l))}と一緒に見る表示です。</b>ほかのリーダーのグループと、マネージャーだけの確認事項は出していません。「全員」で元に戻ります。`;
+}
+
+function spark(daily) {
+  if (!daily.length) return "";
+  const W = 280, H = 48, n = daily.length, bw = W / n, mx = Math.max(1, ...daily.map(d => d.v));
+  const bars = daily.map((d, i) => {
+    const h = d.v ? Math.max(3, (d.v / mx) * (H - 12)) : 2;
+    return `<rect x="${(i * bw + 1.5).toFixed(1)}" y="${(H - h).toFixed(1)}" width="${(bw - 3).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${d.v ? "var(--sky)" : "var(--line)"}"><title>${md(d.d)}　${d.v}件</title></rect>`;
+  }).join("");
+  const last = daily[n - 1];
+  return `<div class="spark"><div class="spark-h"><span>毎日のDM（14日）</span><span>${md(daily[0].d)}〜${md(last.d)}・最大 ${mx}件/日</span></div><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="14日間の毎日のDM件数">${bars}</svg></div>`;
+}
+
+function itemRow(kind, label, rate, sub, wait) {
+  const s = sigOf(rate);
+  return `<div class="it s-${s}"><div class="lbl"><span class="tag ${kind === "目標" ? "goal" : ""}">${kind}</span><span class="txt">${esc(label)}</span></div>
+    <div class="bar">${rate == null ? "" : `<span style="width:${Math.min(100, rate)}%"></span>`}</div>
+    <div class="pct ${rate == null ? "na" : ""}">${rate == null ? (wait ? "判定前" : "—") : rate + "%"}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
+}
+
+function groupCard(g) {
+  if (g.upcoming) {
+    return `<article class="card gc s-none" id="${gid(g.key)}"><div class="up-card"><div class="gc-name"><h3>${esc(g.key)}<span class="ch">#${esc(g.channel)}</span></h3>
+      <div class="gc-meta"><span class="lead">${esc(g.leader_name)}</span><span>${md(g.start)} スタート予定</span></div></div>
+      <p class="gc-note">${esc(g.note || "まだルール・目標が決まっていません")}。決まったらこのページに入れて、毎朝の判定を始めます。</p>
+      <div class="ppl">${g.members.map(m => `<span class="pp">${esc(m.name)}</span>`).join("")}</div></div></article>`;
+  }
+  const P = g.per[st.p], s = P.sig, m = P.m || {};
+  const dmKey = { w7: "dm7", month: "dm_month", all: "dm_all" }[st.p];
+  const period = `${md(g.start)}〜${g.end ? md(g.end) : ""}` + (g.days_left != null ? `<span class="left-d">あと${g.days_left}日</span>` : `<span>${g.days_in}日目</span>`);
+  const rules = P.rules.map(r => itemRow("ルール", r.label, r.rate, r.note ? esc(r.note) : "", false)).join("");
+  const goals = g.goals.map(x => itemRow("目標", x.label, x.rate,
+    `${esc(x.now)}／今日の目安 ${fmt(Math.round(x.exp * 10) / 10)}件${x.need_day != null ? `・残り${x.rem_days}日は1人1日 約${x.need_day}件` : ""}${x.wait ? `・${esc(x.wait)}` : ""}`, x.wait)).join("");
+  const ppl = g.members.map(p => {
+    const stop0 = p.dm7 === 0;
+    return `<span class="pp ${stop0 ? "stop0" : ""}" title="最後のDM ${md(p.last_dm)}">${p.is_leader ? '<span class="ld">リーダー</span>' : ""}${esc(p.name)}<b>${fmt(p[dmKey])}</b><small>件${stop0 ? `・7日0件${p.idle != null ? `（${p.idle}日）` : ""}` : ""}</small></span>`;
+  }).join("");
+  const acts = D.actions.filter(a => (a.groups || [a.group]).includes(g.key) && a.level !== "good" && showAct(a)).slice(0, 3);
+  const todo = acts.length ? `<div class="todo-in s-${acts[0].level === "alert" ? "alert" : acts[0].level === "watch" ? "watch" : "good"}"><h4><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>このグループでやること</h4><ul>${acts.map(a => `<li><span class="w">${esc(a.who)}</span><p>${esc(a.title.replace(/^[^：]+：/, ""))}<small>${esc((a.why.find(w => w.startsWith("打ち手")) || a.why[0] || "").replace("打ち手：", ""))}</small></p></li>`).join("")}</ul></div>` : "";
+  const ticks = [70, 80, 90].map(t => `<span class="tk" style="left:${t}%"></span>`).join("");
+  return `<article class="card gc s-${s}" id="${gid(g.key)}">
+    <div class="gc-top"><div class="gc-name"><h3>${esc(g.key)}<span class="ch">#${esc(g.channel)}</span></h3>
+      <div class="gc-meta"><span class="lead"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>${esc(g.leader_name)}</span><span>${period}</span></div></div>
+      <div class="gc-ach"><span class="v ${P.ach == null ? "na" : ""}">${P.ach == null ? "—" : P.ach + "<small>%</small>"}</span>${pill(s, s === "alert")}</div></div>
+    <div class="gc-body">
+      <div><div class="meter">${P.ach == null ? "" : `<span class="fill" style="width:${Math.min(100, P.ach)}%"></span>`}${ticks}</div>
+        <div class="meter-l"><span style="left:70%">70</span><span style="left:80%">80</span><span style="left:90%">90</span></div></div>
+      <div class="m4">
+        <div><span class="k">DM送信</span><div class="v">${fmt(m.dm)}<span>件</span></div><span class="s">${m.people}人中 ${m.dm_people}人</span></div>
+        <div><span class="k">返信</span><div class="v">${fmt(m.reply)}<span>件</span></div><span class="s">${m.listdm ? "返信率 " + (Math.round(m.reply / m.listdm * 1000) / 10) + "%" : "—"}</span></div>
+        <div><span class="k">サンプル決済</span><div class="v">${fmt(m.sample)}<span>件</span></div><span class="s">${m.pending ? `決済待ち ${m.pending}件` : "決済待ちなし"}</span></div>
+        <div class="deal"><span class="k">成約</span><div class="v">${fmt(m.order)}<span>件</span></div><span class="s">${esc(P.range)}</span></div>
+      </div>
+      ${spark(g.daily)}
+      <div class="items">${rules}${goals}${!rules && !goals ? '<p class="gc-note">ルール・目標がまだありません。</p>' : ""}</div>
+      ${g.unmeasured && g.unmeasured.length ? `<p class="gc-note">ほかに決めたこと（記録がないので達成率には入れていません）：${g.unmeasured.map(esc).join("・")}</p>` : ""}
+      <div class="ppl" aria-label="メンバーのDM（${PLAB[st.p]}）">${ppl}</div>
+      ${g.left && g.left.length ? `<p class="gc-note">退会：${g.left.map(esc).join("・")}（数字に入れていません）</p>` : ""}
+      ${todo}
+    </div></article>`;
+}
+
+function showAct(a) {
+  if (st.l === "all") return true;
+  return (a.leaders || []).includes(st.l) && a.kind !== "leader_check";
+}
+
+const DONE_KEY = "gb-done-" + (D ? D.asof : "");
+function getDone() { try { return JSON.parse(localStorage.getItem(DONE_KEY) || "[]"); } catch (e) { return []; } }
+function setDone(v) { try { localStorage.setItem(DONE_KEY, JSON.stringify(v)); } catch (e) {} }
+const aid = a => a.group + "|" + a.title;
+
+function renderActs() {
+  const list = D.actions.filter(showAct), done = getDone();
+  const nAlert = list.filter(a => a.level === "alert").length;
+  document.getElementById("aCount").textContent = list.length;
+  document.getElementById("aCount").className = "badge" + (nAlert ? " red" : "");
+  document.getElementById("kvJumpN").textContent = list.length;
+  const SC = { alert: "alert", watch: "watch", info: "good", good: "run" };
+  const LT = { alert: "介入", watch: "もう一歩", info: "連絡・確認", good: "ほめる" };
+  const IC = { alert: SIG.alert.ic, watch: SIG.watch.ic, info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>', good: SIG.best.ic };
+  const whos = [...new Set(list.map(a => a.who))];
+  const isMgr = w => w === D.manager;
+  whos.sort((x, y) => (isMgr(y) - isMgr(x)) || (list.filter(a => a.who === y && a.level === "alert").length - list.filter(a => a.who === x && a.level === "alert").length));
+  let i = 0;
+  document.getElementById("acts").innerHTML = whos.length ? whos.map(w => {
+    const xs = list.filter(a => a.who === w);
+    const c = { alert: xs.filter(a => a.level === "alert").length, watch: xs.filter(a => a.level === "watch").length };
+    return `<article class="card wc ${isMgr(w) ? "mgr" : ""}"><div class="wc-h"><span class="av">${esc(w.slice(0, 1))}</span><div><h3>${esc(w)}</h3><small>${isMgr(w) ? "マネージャーがやること" : "リーダーにお願いすること"}</small></div>
+      <span class="cnts">${c.alert ? `<span class="s-alert">介入 ${c.alert}</span>` : ""}${c.watch ? `<span class="s-watch">もう一歩 ${c.watch}</span>` : ""}</span></div>
+      <ol class="acts">${xs.map((a, j) => {
+        const id = aid(a), isDone = done.includes(id), n = i++;
+        const gs = (a.groups || [a.group]).map(k => D.groups.find(x => x.key === k));
+        return (j === 5 ? `</ol><details class="more"><summary>残り${xs.length - 5}件を見る</summary><ol class="acts">` : "") + `<li class="ac s-${SC[a.level]}${isDone ? " done" : ""}"><div class="ac-main"><div class="ac-hd"><span class="pill s-${SC[a.level]}"><svg viewBox="0 0 24 24" aria-hidden="true">${IC[a.level]}</svg>${LT[a.level]}</span>${gs.map((g, j) => g ? `<a href="#${gid(g.key)}">${esc(g.key)}</a>` : `<span>${esc((a.groups || [a.group])[j])}</span>`).join("")}</div>
+          <p class="ac-t">${esc(a.title.replace(/^[^：]+：/, ""))}</p>
+          <ul>${a.why.map(x => `<li>${x.startsWith("打ち手") ? "<b>" + esc(x) + "</b>" : esc(x)}</li>`).join("")}</ul></div>
+          <label class="ck"><input type="checkbox" id="ck-${n}" data-id="${esc(id)}" ${isDone ? "checked" : ""}>やった</label></li>`;
+      }).join("")}</ol>${xs.length > 5 ? "</details>" : ""}</article>`;
+  }).join("") : `<div class="card empty">今日やることはありません。</div>`;
+  document.querySelectorAll("#acts input[type=checkbox]").forEach(cb => cb.onchange = () => {
+    let d = getDone(); const id = cb.dataset.id;
+    d = cb.checked ? d.concat([id]) : d.filter(x => x !== id); setDone(d);
+    cb.closest(".ac").classList.toggle("done", cb.checked);
+  });
+}
+
+function renderTable() {
+  const gs = D.groups.filter(g => inScope(g) && !g.upcoming);
+  const S = D.summary[st.l][st.p];
+  const rows = gs.map(g => {
+    const P = g.per[st.p], m = P.m;
+    return `<tr><td><a href="#${gid(g.key)}" style="color:var(--head);font-weight:900;text-decoration:none">${esc(g.key)}</a><span class="p">${esc(g.leader_name)}・${esc(P.range)}</span></td>
+      <td class="ach s-${P.sig}">${P.ach == null ? "—" : P.ach + "%"}</td><td>${pill(P.sig)}</td>
+      <td><span class="c">${fmt(m.dm)}</span></td><td><span class="c">${m.dm_people}/${m.people}</span></td><td><span class="c">${fmt(m.reply)}</span><span class="p">${m.listdm ? (Math.round(m.reply / m.listdm * 1000) / 10) + "%" : "—"}</span></td>
+      <td><span class="c">${fmt(m.sample)}</span>${m.pending ? `<span class="p">決済待ち ${m.pending}</span>` : ""}</td><td><span class="c">${fmt(m.order)}</span></td></tr>`;
+  }).join("");
+  document.getElementById("tbl").innerHTML = `<thead><tr><th>グループ</th><th>達成率</th><th class="l">信号</th><th>DM送信</th><th>送った人</th><th>返信<span class="p">返信率</span></th><th>サンプル決済</th><th>成約</th></tr></thead><tbody>${rows}
+    <tr class="sum"><td>合計（同じ人は1回）</td><td class="ach s-${S.sig}">${S.ach == null ? "—" : S.ach + "%"}</td><td>平均</td><td><span class="c">${fmt(S.dm)}</span></td><td><span class="c">${S.dm_people}/${S.people}</span></td><td><span class="c">${fmt(S.reply)}</span></td><td><span class="c">${fmt(S.sample)}</span></td><td><span class="c">${fmt(S.order)}</span></td></tr></tbody>`;
+}
+
+function renderStatic() {
+  document.getElementById("stamp").textContent = `${md(D.y)}までの数字・毎朝更新`;
+  document.getElementById("legend").innerHTML = ORDER.slice().reverse().map(s => `<span class="s-${s}"><i></i>${SIG[s].t}（${SIG[s].r}）</span>`).join("");
+  document.getElementById("sigScale").innerHTML = ORDER.map(s => `<div class="s-${s}">${SIG[s].t}<small>${SIG[s].r}</small></div>`).join("");
+  const DEF = [
+    ["達成率", "グループで決めたルールと目標、それぞれの達成度の平均。1つ100%で頭打ち（1つが大きく超えても、守れていないルールが隠れないように）。"],
+    ["ルールの達成度", "ルールの形ごとに「守れた日（週）の割合」をメンバーごとに出して平均。例：1日◯件以上の日の割合、DMを送った日にグループへ投稿した日の割合、週◯件に届いた週の割合（「◯/42件」の報告も見る）。直近7日の週◯件ルールは、終わった直近の1週間で見ます。"],
+    ["目標の達成度", "実績 ÷ 今日までに来ていたい数（期限までの日割り）。サンプル・成約の目標は件数が少ないので、期間の半分を過ぎるまで0件なら「判定前」にして平均に入れません。"],
+    ["DM送信", "日ごとに、全体共有リストの行数と、グループ・専用部屋の自己報告（「本日：◯通」「◯/42件」など）の多い方。リストへの記入漏れがある人がいるため。"],
+    ["返信", "全体共有リストの「返信」◯。最初にDMした日の行に付くので、その期間に送ったDMへの返信の数（最近の分はこれから増えます）。返信率＝返信 ÷ リストに記入されたDM。"],
+    ["サンプル決済", "サンプル申込フォームの「サンプル発送状況」が〇か決済完了の行（申込日で数える）。受講生本人宛ては数えません。決済待ちは別に表示。"],
+    ["成約", "「抹茶 売上表（運営用）」の行（入金日・成約日）。日付が分からない行は期間に入れていません。サンプルは含みません。"],
+    ["だれを数えるか", "グループ設定のメンバー（リーダーがメンバーのクラスはリーダーも）。退会した人は入れません。2つのグループにいる人は、上の合計では1回だけ数えます。"],
+    ["今日やること", "直近7日の数字で判定。達成率が80%未満のグループは、いちばん守れていないルール・目標と打ち手を出します。ほかに、7日DMがない人・決済待ち・グループの終わり・リーダーの投稿がない場合も出ます。"],
+    ["データの時点", `全体共有リスト ${esc(D.src.list)}・サンプル申込フォーム ${esc(D.src.form || "—")}・売上表 ${esc(D.src.sales || "—")}・Discord は毎朝の取り込み分（${md(D.y)}まで）。`]
+  ];
+  document.getElementById("defs").innerHTML = DEF.map(([k, v]) => `<div><b>${k}</b>${v}</div>`).join("");
+  document.getElementById("foot").textContent = `作成 ${D.built}・元のスプレッドシートには何も書き込んでいません`;
+}
+
+function render() {
+  renderSegs(); renderKV();
+  const gs = D.groups.filter(inScope).slice().sort((a, b) => {
+    if (a.upcoming !== b.upcoming) return a.upcoming ? 1 : -1;
+    const x = a.per[st.p].ach, y = b.per[st.p].ach;
+    return (x == null ? 999 : x) - (y == null ? 999 : y);
+  });
+  document.getElementById("gScope").textContent = `${lname(st.l)}・${PLAB[st.p]}・達成率の低い順`;
+  document.getElementById("groups").innerHTML = gs.map(groupCard).join("");
+  renderActs(); renderTable();
+  try { history.replaceState(null, "", st.l === "all" ? location.pathname + location.search : "#" + Object.keys(LKEY).find(k => LKEY[k] === st.l)); } catch (e) {}
+}
+if (D) { renderStatic(); render(); }
+</script>
